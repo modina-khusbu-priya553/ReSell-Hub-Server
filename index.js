@@ -1,22 +1,17 @@
 const express = require('express');
-const app = express()
-const cors = require("cors");
-const dotenv = require('dotenv')
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-dotenv.config()
+const cors = require('cors');
+const dotenv = require('dotenv');
+const { MongoClient, ServerApiVersion } = require('mongodb');
 
+dotenv.config();
 
-// const uri = process.env.MONGODB_URI;
-const port = process.env.PORT || 5001;
+const app = express();
 
-
-const uri = process.env.MONGODB_URL;
-// 1: allow to run in all side
 app.use(cors());
-// 2: convert json string into json perse
 app.use(express.json());
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
+const uri = process.env.MONGODB_URL;
+
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -25,49 +20,44 @@ const client = new MongoClient(uri, {
   },
 });
 
+const db = client.db("resell-hub");
+const productCollection = db.collection("products");
 
-const run = async() =>{
+// POST - Add Product
+app.post('/product', async (req, res) => {
   try {
+    const doc = req.body;
 
-    // Database collection
-    const db = client.db("resell-hub");
-    const productCollection = db.collection("products");
+    const result = await productCollection.insertOne(doc);
 
-
-    // Connect the client to the server (optional starting in v4.7)
-    await client.connect();
-
-
-     //1:  post for add product
-
-   app.post('/product',async (req, res) => {
-      const doc = req.body;
-      const result = await productCollection.insertOne(doc);
-      console.log(result)
-      res.send(result)
-
-    })
-
-
-    // Send a ping to confirm a successful connection
-    // const result = await client.db('admin').command({ ping: 1 });
-    console.log(
-      'Pinged your deployment. You successfully connected to MongoDB!'
-    );
-    // return result;
-  } finally {
-    // Ensures that the client will close when you finish/error
-    // await client.close();
+    res.status(201).send(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({
+      message: "Failed to add product",
+      error: error.message
+    });
   }
-}
+});
 
-run().catch(console.dir);
+// GET - Get Products
+app.get('/product', async (req, res) => {
+  try {
+    const products = await productCollection.find().toArray();
 
+    res.send(products);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({
+      message: "Failed to get products",
+      error: error.message
+    });
+  }
+});
 
+// Test route
 app.get('/', (req, res) => {
-  res.send('server is running!')
-})
+  res.send('server is running!');
+});
 
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
-})
+module.exports = app;
