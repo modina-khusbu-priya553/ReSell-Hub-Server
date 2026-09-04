@@ -43,7 +43,9 @@ const run = async() =>{
    app.post('/product',async (req, res) => {
       const doc = req.body;
       const result = await productCollection.insertOne(doc);
+      console.log(result)
       res.send(result)
+
     })
 
 
