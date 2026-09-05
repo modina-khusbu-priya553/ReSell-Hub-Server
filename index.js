@@ -40,7 +40,7 @@ app.post('/product', async (req, res) => {
   }
 });
 
-// GET - Get Products
+// GET - Get Products data
 app.get('/product', async (req, res) => {
   try {
     const products = await productCollection.find().toArray();
@@ -55,6 +55,38 @@ app.get('/product', async (req, res) => {
   }
 });
 
+// get - Get seller product by user id
+app.get('/product/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const query = { userId: userId };
+    const products = await productCollection.find(query).toArray();
+    res.send(products);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({
+      message: "Failed to get products",
+      error: error.message
+    });
+  }
+});
+
+// GeET - get seller product details by user id and product id
+// app.get('/product/:userId/:productId', async (req, res) => {
+//   try {
+//     const userId = req.params.userId;
+//     const productId = req.params.productId;
+//     const query = { userId: userId, _id: new ObjectId(productId) };
+//     const product = await productCollection.findOne(query);
+//     res.send(product);
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).send({
+//       message: "Failed to get product",
+//       error: error.message
+//     });
+//   }
+// });
 
 // GET - Get Product by ID
 app.get('/product/:id', async (req, res) => {
