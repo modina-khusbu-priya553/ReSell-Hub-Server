@@ -55,9 +55,21 @@ app.get('/product', async (req, res) => {
   }
 });
 
+// patch - Update Product
+app.patch('/product/:id', async (req, res) => {
+  const productId = req.params.id;
+  const query = { _id: productId };
+  const modifyProduct = req.body;
+  delete modifyProduct._id;
+  const updatedProduct = { $set: modifyProduct };
+  const result = await productCollection.updateOne(query, updatedProduct);
+  res.send(result);
+
+})
+
 // Test route
 app.get('/', (req, res) => {
-  res.send('server is running!');
+  res.send('server is running well!');
 });
 
 module.exports = app;
