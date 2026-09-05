@@ -23,7 +23,7 @@ const client = new MongoClient(uri, {
 const db = client.db("resell-hub");
 const productCollection = db.collection("products");
 
-// POST - Add Product
+//1: POST - Add Product
 app.post('/product', async (req, res) => {
   try {
     const doc = req.body;
@@ -40,7 +40,7 @@ app.post('/product', async (req, res) => {
   }
 });
 
-// GET - Get Products data
+//2: GET - Get Products data
 app.get('/product', async (req, res) => {
   try {
     const products = await productCollection.find().toArray();
@@ -55,40 +55,20 @@ app.get('/product', async (req, res) => {
   }
 });
 
-// get - Get seller product by user id
-app.get('/product/:userId', async (req, res) => {
+//3: GET - Get seller product by user id
+app.get('/product/seller/:userId', async (req, res) => {
   try {
     const userId = req.params.userId;
-    const query = { userId: userId };
+    const query = { "sellerInfo.userId": userId }; // note: nested field
     const products = await productCollection.find(query).toArray();
     res.send(products);
   } catch (error) {
-    console.error(error);
-    res.status(500).send({
-      message: "Failed to get products",
-      error: error.message
-    });
+    res.status(500).send({ message: "Failed to get products", error: error.message });
   }
 });
 
-// GeET - get seller product details by user id and product id
-// app.get('/product/:userId/:productId', async (req, res) => {
-//   try {
-//     const userId = req.params.userId;
-//     const productId = req.params.productId;
-//     const query = { userId: userId, _id: new ObjectId(productId) };
-//     const product = await productCollection.findOne(query);
-//     res.send(product);
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).send({
-//       message: "Failed to get product",
-//       error: error.message
-//     });
-//   }
-// });
 
-// GET - Get Product by ID
+//4: GET - Get Product by ID
 app.get('/product/:id', async (req, res) => {
   try {
     const id = req.params.id;
@@ -104,14 +84,19 @@ app.get('/product/:id', async (req, res) => {
   }
 });
 
-// patch - Update Product
+//5: PATCH - Update Product
 app.patch('/product/:id', async (req, res) => {
   try {
     const id = req.params.id;
     const updatedFields = req.body;
     delete updatedFields._id;
+    const requesterId = req.body.requesterId;
+    delete updatedFields.requesterId;
 
-    const result = await productCollection.updateOne({ _id: new ObjectId(id) }, { $set: updatedFields });
+    const result = await productCollection.updateOne(
+      { _id: new ObjectId(id), "sellerInfo.userId": requesterId }, 
+      { $set: updatedFields }
+    );
     res.send(result);
   } catch (err) {
     res.status(500).send({ error: 'Failed to update product' });
@@ -119,10 +104,11 @@ app.patch('/product/:id', async (req, res) => {
 
 });
 
-// Delete - Delete Product
+//6: DELETE - Delete Product
 app.delete('/product/:id', async (req, res) => {
   const id = req.params.id;
-  const query = { _id: new ObjectId(id) };
+  const requesterId = req.query.requesterId; 
+  const query = { _id: new ObjectId(id), "sellerInfo.userId": requesterId };
   const result = await productCollection.deleteOne(query);
   res.send(result);
 });
