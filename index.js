@@ -58,19 +58,25 @@ app.get('/product', async (req, res) => {
 // patch - Update Product
 app.patch('/product/:id', async (req, res) => {
   try {
-     const id = req.params.id;
+    const id = req.params.id;
     const updatedFields = req.body;
-  delete updatedFields._id;
-  
-  const result = await productCollection.updateOne( { _id: new ObjectId(id) }, { $set: updatedFields });
-  res.send(result); 
+    delete updatedFields._id;
+
+    const result = await productCollection.updateOne({ _id: new ObjectId(id) }, { $set: updatedFields });
+    res.send(result);
   } catch (err) {
     res.status(500).send({ error: 'Failed to update product' });
   }
-  
- 
 
-})
+});
+
+// Delete - Delete Product
+app.delete('/product/:id', async (req, res) => {
+  const userId = req.params.userId;
+  const query = { userId: userId };
+  const result = await productCollection.deleteOne(query);
+  res.send(result);
+});
 
 // Test route
 app.get('/', (req, res) => {
