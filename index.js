@@ -55,6 +55,23 @@ app.get('/product', async (req, res) => {
   }
 });
 
+
+// GET - Get Product by ID
+app.get('/product/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+    const query = { _id: new ObjectId(id) }
+    const product = await productCollection.findOne(query);
+    res.send(product);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({
+      message: "Failed to get product",
+      error: error.message
+    });
+  }
+});
+
 // patch - Update Product
 app.patch('/product/:id', async (req, res) => {
   try {
@@ -72,8 +89,8 @@ app.patch('/product/:id', async (req, res) => {
 
 // Delete - Delete Product
 app.delete('/product/:id', async (req, res) => {
-  const userId = req.params.userId;
-  const query = { userId: userId };
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) };
   const result = await productCollection.deleteOne(query);
   res.send(result);
 });
