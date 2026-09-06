@@ -22,6 +22,8 @@ const client = new MongoClient(uri, {
 
 const db = client.db("resell-hub");
 const productCollection = db.collection("products");
+const paymentCollection = db.collection("payments");
+const userCollection = db.collection("user");
 
 //1: POST - Add Product
 app.post('/product', async (req, res) => {
@@ -112,6 +114,30 @@ app.delete('/product/:id', async (req, res) => {
   const result = await productCollection.deleteOne(query);
   res.send(result);
 });
+
+  //7: post api for payment data from frontend to backend
+
+   app.post("/payment", async(req, res) =>{
+     const {user, buyerEmail, buyerId, sellerName, sellerId,sellerEmail, productId, session_id, price} = req.body;
+
+     const isExistSession = await paymentCollection.findOne({session_id});
+     if(isExistSession){
+      return res.status(400).send({message: 'session already exist'})
+     }
+    const result = await paymentCollection.insertOne({
+      userId: new ObjectId(user.id),
+      buyerEmail,
+      buyerId,
+      sellerName,
+      sellerId,
+      sellerEmail,
+      productId,
+      price
+    });
+
+
+     res.send({ result});
+   })
 
 // Test route
 app.get('/', (req, res) => {
