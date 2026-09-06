@@ -11,6 +11,7 @@ app.use(cors());
 app.use(express.json());
 
 const uri = process.env.MONGODB_URL;
+const port = process.env.PORT;
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -19,11 +20,14 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
+const run = async () => {
 
+  try{
 const db = client.db("resell-hub");
 const productCollection = db.collection("products");
 const paymentCollection = db.collection("payments");
 const userCollection = db.collection("user");
+const orderCollection = db.collection('orders')
 
 //1: POST - Add Product
 app.post('/product', async (req, res) => {
@@ -118,30 +122,84 @@ app.delete('/product/:id', async (req, res) => {
   //7: post api for payment data from frontend to backend
 
    app.post("/payment", async(req, res) =>{
-     const {user, buyerEmail, buyerId, sellerName, sellerId,sellerEmail, productId, session_id, price} = req.body;
 
+    try {
+       const {
+      buyerId,
+      buyerName,
+      buyerEmail,
+      sellerId,
+      sellerName,
+      sellerEmail,
+      productId,
+      session_id,
+      price,
+      quantity,
+      title,
+      image,
+    } = req.body;
+
+    if (!session_id) {
+      return res.status(400).send({ message: 'session_id is required' });
+    }
      const isExistSession = await paymentCollection.findOne({session_id});
      if(isExistSession){
       return res.status(400).send({message: 'session already exist'})
      }
-    const result = await paymentCollection.insertOne({
+    
+    //  1: Payment data
+    const paymentResult = await paymentCollection.insertOne({
       userId: new ObjectId(user.id),
       buyerEmail,
-      buyerId,
+      buyerId: new ObjectId(buyerId),
       sellerName,
       sellerId,
       sellerEmail,
       productId,
-      price
+       price: Number(price),
+      quantity: Number(quantity),
+      title,
+      image,
+      paymentStatus: 'success',
+      paymentDate: new Date(),
     });
 
+    // order data
+     const orderResult = await .insertOne({
+      buyerInfo: { userId: buyerId, name: buyerName, email: buyerEmail },
+      sellerInfo: { userId: sellerId, name: sellerName, email: sellerEmail },
+       productId,
+          productTitle: title,
+      productImage: image,
+      price: Number(price),
+      paymentStatus: 'paid',
+      orderStatus: 'Pending',
+      createdAt: new Date(),
+    });
 
-     res.send({ result});
-   })
+    res.status(201).send({ paymentResult, orderResult });
+  } catch (error) {
+    console.error('Payment route error:', error); // ekhon terminal-e real error dekhaবে
+    res.status(500).send({ message: 'Failed to process payment', error: error.message });
+  } 
+   });
 
-// Test route
+    console.log(
+      'Pinged your deployment. You successfully connected to MongoDB!'
+    );
+    // return result;
+  } finally {
+    // Ensures that the client will close when you finish/error
+    // await client.close();
+  }
+}
+
+run().catch(console.dir);
+
 app.get('/', (req, res) => {
-  res.send('server is running well!');
-});
+  res.send('server is running')
+})
 
-module.exports = app;
+app.listen(port, () => {
+  console.log(`server is running on port ${ port }`)
+})
